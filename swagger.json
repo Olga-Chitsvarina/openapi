@@ -1,0 +1,245 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "JFrog Artifactory Artifacts & Storage API",
+    "description": "REST API for managing artifacts, storage, and related operations in JFrog Artifactory",
+    "version": "1.0.0",
+    "contact": {
+      "name": "JFrog Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{jfrog_url}/artifactory",
+      "description": "JFrog Platform",
+      "variables": {
+        "jfrog_url": {
+          "default": "myserver.jfrog.io",
+          "description": "Your JFrog Platform hostname (e.g., mycompany.jfrog.io)"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Storage Info",
+      "description": "Storage information operations"
+    }
+  ],
+  "paths": {
+    "/api/storageinfo": {
+      "get": {
+        "tags": [
+          "Storage Info"
+        ],
+        "summary": "Get Storage Summary Info",
+        "description": "Returns storage summary information regarding binaries, file store and repositories.\nSince: 4.2.0\nSecurity: Requires authentication using Access Tokens, either as admin or using a scoped token with the system:info/storage:r scope.\n",
+        "operationId": "getStorageSummaryInfo",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved storage summary information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageSummaryInfo"
+                },
+                "examples": {
+                  "storageSummary": {
+                    "summary": "Get Storage Summary Info",
+                    "value": {
+                      "binariesSummary": {
+                        "binariesCount": "125,726",
+                        "binariesSize": "3.48 GB",
+                        "artifactsSize": "59.77 GB",
+                        "optimization": "5.82%",
+                        "itemsCount": "2,176,580",
+                        "artifactsCount": "2,084,408"
+                      },
+                      "fileStoreSummary": {
+                        "storageType": "filesystem",
+                        "storageDirectory": "/home/.../artifactory/data/filestore",
+                        "totalSpace": "204.28 GB",
+                        "usedSpace": "32.22 GB (15.77%)",
+                        "freeSpace": "172.06 GB (84.23%)"
+                      },
+                      "repositoriesSummaryList": [
+                        {
+                          "repoKey": "libs-release-local",
+                          "repoType": "LOCAL",
+                          "foldersCount": 120,
+                          "filesCount": 5432,
+                          "usedSpace": "1.24 GB",
+                          "itemsCount": 5552,
+                          "packageType": "Maven",
+                          "percentage": "2.08%"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad Credentials - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission Denied - The user does not have the necessary permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "description": "HTTP status code"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Error message"
+                }
+              }
+            }
+          }
+        }
+      },
+      "StorageSummaryInfo": {
+        "type": "object",
+        "properties": {
+          "binariesSummary": {
+            "$ref": "#/components/schemas/BinariesSummary"
+          },
+          "fileStoreSummary": {
+            "$ref": "#/components/schemas/FileStoreSummary"
+          },
+          "repositoriesSummaryList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RepositorySummary"
+            }
+          }
+        }
+      },
+      "BinariesSummary": {
+        "type": "object",
+        "properties": {
+          "binariesCount": {
+            "type": "string"
+          },
+          "binariesSize": {
+            "type": "string"
+          },
+          "artifactsSize": {
+            "type": "string"
+          },
+          "optimization": {
+            "type": "string"
+          },
+          "itemsCount": {
+            "type": "string"
+          },
+          "artifactsCount": {
+            "type": "string"
+          }
+        }
+      },
+      "FileStoreSummary": {
+        "type": "object",
+        "properties": {
+          "storageType": {
+            "type": "string"
+          },
+          "storageDirectory": {
+            "type": "string"
+          },
+          "totalSpace": {
+            "type": "string"
+          },
+          "usedSpace": {
+            "type": "string"
+          },
+          "freeSpace": {
+            "type": "string"
+          }
+        }
+      },
+      "RepositorySummary": {
+        "type": "object",
+        "properties": {
+          "repoKey": {
+            "type": "string"
+          },
+          "repoType": {
+            "type": "string"
+          },
+          "foldersCount": {
+            "type": "integer"
+          },
+          "filesCount": {
+            "type": "integer"
+          },
+          "usedSpace": {
+            "type": "string"
+          },
+          "itemsCount": {
+            "type": "integer"
+          },
+          "packageType": {
+            "type": "string"
+          },
+          "percentage": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token authentication"
+      },
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    },
+    {
+      "basicAuth": []
+    }
+  ],
+  "x-readme": {
+    "explorer-enabled": false
+  }
+}
