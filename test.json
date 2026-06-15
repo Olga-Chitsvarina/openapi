@@ -1,0 +1,670 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "JFrog Artifactory Artifacts & Storage API",
+    "description": "REST API for managing artifacts, storage, and related operations in JFrog Artifactory",
+    "version": "1.0.0",
+    "contact": {
+      "name": "JFrog Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{jfrog_url}/artifactory",
+      "description": "JFrog Platform",
+      "variables": {
+        "jfrog_url": {
+          "default": "myserver.jfrog.io",
+          "description": "Your JFrog Platform hostname (e.g., mycompany.jfrog.io)"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Item Management APIs",
+      "description": "Item management operations including properties, deployment, and deletion"
+    }
+  ],
+  "paths": {
+    "/api/storage/{repoKey}/{itemPath}": {
+      "get": {
+        "tags": [
+          "Item Management APIs"
+        ],
+        "summary": "Get Storage Item Information",
+        "description": "Returns different types of information about an item based on query parameters.\n\n**Query parameters are mutually exclusive** - only one operation type can be requested at a time:\n- list - Get file/folder listing (flat or deep). **Requires a non-anonymous privileged user.** Requires Artifactory Pro.\n- stats - Get file statistics (download count, last download info). Requires read privileges.\n- lastModified - Get last modified timestamp. **Requires a valid user with deploy permissions.** Requires Artifactory Pro.\n- properties - Get item properties\n- permissions - Get item permissions\n- No parameters - Get folder or file info\n\nSince: 2.2.1 (folder/file info); 2.2.4 (file list); 2.2.5 (lastModified); 3.1.0 (stats)\n\nSecurity: Requires a privileged user (can be anonymous) for basic folder/file/properties/permissions info. See per-operation notes above for stricter requirements.\n",
+        "operationId": "getStorageItem",
+        "parameters": [
+          {
+            "name": "repoKey",
+            "in": "path",
+            "description": "Repository key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "itemPath",
+            "in": "path",
+            "description": "Item path within the repository",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "properties",
+            "in": "query",
+            "description": "Comma-separated list of property keys to retrieve. **Mutually exclusive with other query parameters.**",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastModified",
+            "in": "query",
+            "description": "Returns the last modified item at the given path. If the given path is a folder, the latest last modified item is searched for recursively. **Mutually exclusive with other query parameters.**",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "stats",
+            "in": "query",
+            "description": "Returns item statistics (download count, last download date, last downloader). **Mutually exclusive with other query parameters.**",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "permissions",
+            "in": "query",
+            "description": "Returns item permissions. **Mutually exclusive with other query parameters.**",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "list",
+            "in": "query",
+            "description": "Get a flat (the default) or deep listing of the files and folders. **Mutually exclusive with other query parameters except listing-related parameters (deep, depth, listFolders, etc.).**",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "deep",
+            "in": "query",
+            "description": "Deep listing (0 or 1). Used with list parameter only.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "description": "Optional depth to limit the results for deep listing. Used with list parameter only.",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "listFolders",
+            "in": "query",
+            "description": "Include folders in listing (0 or 1). Used with list parameter only.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "name": "mdTimestamps",
+            "in": "query",
+            "description": "Include metadata timestamp values (0 or 1). Used with list parameter only.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "name": "includeRootPath",
+            "in": "query",
+            "description": "Include folder root path (0 or 1). Used with list parameter only.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved item information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/FileList"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FileStatistics"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ItemLastModified"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ItemProperties"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ItemPermissions"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FolderInfo"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FileInfo"
+                    }
+                  ]
+                },
+                "examples": {
+                  "folderInfo": {
+                    "summary": "Folder info (no query params)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme",
+                      "repo": "libs-release-local",
+                      "path": "/org/acme",
+                      "created": "2024-01-15T10:30:00.000Z",
+                      "createdBy": "userY",
+                      "lastModified": "2024-02-20T14:22:00.000Z",
+                      "modifiedBy": "userX",
+                      "lastUpdated": "2024-02-20T14:22:00.000Z",
+                      "children": [
+                        {
+                          "uri": "/child1",
+                          "folder": true
+                        },
+                        {
+                          "uri": "/child2",
+                          "folder": false
+                        }
+                      ]
+                    }
+                  },
+                  "fileInfo": {
+                    "summary": "File info (no query params)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme/lib/ver/lib-ver.pom",
+                      "downloadUri": "http://localhost:8081/artifactory/libs-release-local/org/acme/lib/ver/lib-ver.pom",
+                      "repo": "libs-release-local",
+                      "path": "/org/acme/lib/ver/lib-ver.pom",
+                      "created": "2024-01-15T10:30:00.000Z",
+                      "createdBy": "userY",
+                      "lastModified": "2024-02-20T14:22:00.000Z",
+                      "modifiedBy": "userX",
+                      "lastUpdated": "2024-02-20T14:22:00.000Z",
+                      "size": "1024",
+                      "mimeType": "application/pom+xml",
+                      "checksums": {
+                        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+                        "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                      },
+                      "originalChecksums": {
+                        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+                        "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                      }
+                    }
+                  },
+                  "itemProperties": {
+                    "summary": "Item properties (?properties)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme",
+                      "properties": {
+                        "p1": [
+                          "v1",
+                          "v2",
+                          "v3"
+                        ],
+                        "p2": [
+                          "v4",
+                          "v5",
+                          "v6"
+                        ]
+                      }
+                    }
+                  },
+                  "fileStatistics": {
+                    "summary": "File statistics (?stats)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme/foo/1.0/foo-1.0.jar",
+                      "lastDownloaded": 1717938421000,
+                      "downloadCount": 1337,
+                      "lastDownloadedBy": "user1"
+                    }
+                  },
+                  "lastModified": {
+                    "summary": "Last modified item (?lastModified)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme/foo/1.0-SNAPSHOT/foo-1.0-SNAPSHOT.pom",
+                      "lastModified": "2024-02-20T14:22:00.000Z"
+                    }
+                  },
+                  "fileList": {
+                    "summary": "File list (?list&deep=1)",
+                    "value": {
+                      "uri": "http://localhost:8081/artifactory/api/storage/libs-release-local/org/acme",
+                      "created": "2024-01-15T10:30:00.000Z",
+                      "files": [
+                        {
+                          "uri": "/archived",
+                          "size": "-1",
+                          "lastModified": "2024-02-20T14:22:00.000Z",
+                          "folder": true
+                        },
+                        {
+                          "uri": "/doc.txt",
+                          "size": "253207",
+                          "lastModified": "2024-02-20T14:22:00.000Z",
+                          "folder": false,
+                          "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "application/vnd.org.jfrog.artifactory.storage.FolderInfo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderInfo"
+                }
+              },
+              "application/vnd.org.jfrog.artifactory.storage.FileInfo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileInfo"
+                }
+              },
+              "application/vnd.org.jfrog.artifactory.storage.ItemProperties+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemProperties"
+                }
+              },
+              "application/vnd.org.jfrog.artifactory.storage.ItemLastModified+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLastModified"
+                }
+              },
+              "application/vnd.org.jfrog.storage.StatsInfo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileStatistics"
+                }
+              },
+              "application/vnd.org.jfrog.artifactory.storage.FileList+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid query parameter combination or malformed path.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad Credentials - Authentication failed. A valid token is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission Denied - The user does not have the necessary permissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - The specified item does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ItemProperties": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ItemPermissions": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "principals": {
+            "type": "object",
+            "properties": {
+              "users": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "groups": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FolderInfo": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolderChild"
+            }
+          }
+        }
+      },
+      "FolderChild": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "folder": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FileInfo": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "downloadUri": {
+            "type": "string"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "remoteUrl": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "size": {
+            "type": "string",
+            "description": "Size in bytes"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "checksums": {
+            "$ref": "#/components/schemas/Checksums"
+          },
+          "originalChecksums": {
+            "$ref": "#/components/schemas/Checksums"
+          }
+        }
+      },
+      "Checksums": {
+        "type": "object",
+        "properties": {
+          "md5": {
+            "type": "string"
+          },
+          "sha1": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemLastModified": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FileStatistics": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "lastDownloaded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp in milliseconds"
+          },
+          "downloadCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastDownloadedBy": {
+            "type": "string"
+          }
+        }
+      },
+      "FileList": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileListItem"
+            }
+          }
+        }
+      },
+      "FileListItem": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string",
+            "description": "Size in bytes, or \"-1\" for folders"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "folder": {
+            "type": "boolean"
+          },
+          "sha1": {
+            "type": "string"
+          },
+          "mdTimestamps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "description": "HTTP status code"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Error message"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token authentication"
+      },
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    },
+    {
+      "basicAuth": []
+    }
+  ],
+  "x-readme": {
+    "explorer-enabled": false
+  }
+}
